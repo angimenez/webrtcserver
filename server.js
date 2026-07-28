@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const PeerJS = require('peerjs');
+const { Peer } = require('peerjs');
 const path = require('path');
 
 const app = express();
@@ -12,7 +12,7 @@ const wss = new WebSocket.Server({ server });
 const SERVER_PEER_ID = "noruf-security-server";
 
 // Inicializar PeerJS
-const peer = new PeerJS({
+const peer = new Peer({
     id: SERVER_PEER_ID,
     debug: true
 });
