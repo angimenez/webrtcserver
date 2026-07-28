@@ -59,7 +59,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`[INFO] Servidor WebRTC escuchando en puerto ${PORT}`);
 });
