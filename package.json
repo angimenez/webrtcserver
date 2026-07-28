@@ -1,0 +1,14 @@
+{
+  "name": "webrtc-server",
+  "version": "1.0.0",
+  "description": "Servidor WebRTC para Noruf Security System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "peerjs": "^1.5.2"
+  }
+}
