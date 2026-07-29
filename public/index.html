@@ -13,6 +13,9 @@
     <script>
     const ws = new WebSocket(`wss://${window.location.host}`);
     
+    // --- NUEVO: Generar ID único para este visor ---
+    const clientId = Math.random().toString(36).substring(2, 15);
+    
     const pc = new RTCPeerConnection({
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
@@ -27,19 +30,24 @@
     // 2. Enviar candidatos ICE
     pc.onicecandidate = (event) => {
         if (event.candidate) {
-            ws.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
+            ws.send(JSON.stringify({ 
+                type: 'candidate', 
+                client_id: clientId, // Enviar ID
+                candidate: event.candidate 
+            }));
         }
     };
 
     // 3. Iniciar la oferta cuando el WebSocket conecta
     ws.onopen = async () => {
-        // --- AÑADE ESTA LÍNEA AQUÍ ---
         pc.addTransceiver('video', { direction: 'recvonly' });
         
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
+        
         ws.send(JSON.stringify({ 
             type: 'offer', 
+            client_id: clientId, // Enviar ID
             offer: { sdp: pc.localDescription.sdp, type: pc.localDescription.type } 
         }));
     };
@@ -48,12 +56,15 @@
     ws.onmessage = async (event) => {
         const data = JSON.parse(event.data);
         
+        // --- NUEVO: Ignorar mensajes de otros clientes ---
+        if (data.client_id && data.client_id !== clientId) return;
+        
         if (data.type === 'answer') {
             await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-        } else if (data.type === 'candidate') {
+        } else if (data.type === 'candidate' && data.candidate) {
             await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
         }
     };
-</script>
+    </script>
 </body>
 </html>
