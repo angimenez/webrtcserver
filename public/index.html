@@ -11,41 +11,46 @@
 <body>
     <video id="webcam-video" autoplay playsinline muted></video>
     <script>
-        // Conexión al servidor de señalización Node.js
-        const ws = new WebSocket(`wss://${window.location.host}`);
+    const ws = new WebSocket(`wss://${window.location.host}`);
+    
+    const pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+    
+    const video = document.getElementById('webcam-video');
+
+    // 1. Recibir video
+    pc.ontrack = (event) => {
+        video.srcObject = event.streams[0];
+    };
+
+    // 2. Enviar candidatos ICE
+    pc.onicecandidate = (event) => {
+        if (event.candidate) {
+            ws.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
+        }
+    };
+
+    // 3. Iniciar la oferta cuando el WebSocket conecta
+    ws.onopen = async () => {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        ws.send(JSON.stringify({ 
+            type: 'offer', 
+            offer: { sdp: pc.localDescription.sdp, type: pc.localDescription.type } 
+        }));
+    };
+
+    // 4. Manejar respuestas del servidor Python
+    ws.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
         
-        // Configuración STUN de Google para NAT traversal
-        const pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        });
-        
-        const video = document.getElementById('webcam-video');
-
-        pc.ontrack = (event) => {
-            video.srcObject = event.streams[0];
-        };
-
-        pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                ws.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
-            }
-        };
-
-        ws.onmessage = async (event) => {
-            const data = JSON.parse(event.data);
-            
-            if (data.type === 'offer') {
-                await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                ws.send(JSON.stringify({ 
-                    type: 'answer', 
-                    answer: { sdp: answer.sdp, type: answer.type } 
-                }));
-            } else if (data.type === 'candidate') {
-                await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-            }
-        };
-    </script>
+        if (data.type === 'answer') {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        } else if (data.type === 'candidate') {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
+    };
+</script>
 </body>
 </html>
