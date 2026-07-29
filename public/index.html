@@ -33,6 +33,9 @@
 
     // 3. Iniciar la oferta cuando el WebSocket conecta
     ws.onopen = async () => {
+        // --- AÑADE ESTA LÍNEA AQUÍ ---
+        pc.addTransceiver('video', { direction: 'recvonly' });
+        
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         ws.send(JSON.stringify({ 
