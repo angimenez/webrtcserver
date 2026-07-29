@@ -33,7 +33,18 @@
 
     // 1. Recibir video
     pc.ontrack = (event) => {
-        video.srcObject = event.streams[0];
+        console.log("¡Track de video recibido desde Python!");
+        
+        // Si aiortc mandó el stream bien, lo usamos. 
+        // Si lo mandó vacío, creamos uno nosotros a la fuerza.
+        if (event.streams && event.streams.length > 0) {
+            video.srcObject = event.streams[0];
+        } else {
+            video.srcObject = new MediaStream([event.track]);
+        }
+        
+        // Obligamos al navegador a darle Play por si las políticas de Autoplay lo bloquean
+        video.play().catch(err => console.error("Error al reproducir el video:", err));
     };
 
     // 2. Enviar candidatos ICE
