@@ -12,6 +12,15 @@
     <video id="webcam-video" autoplay playsinline muted></video>
     <script>
     const ws = new WebSocket(`wss://${window.location.host}`);
+        // --- NUEVO: Keep-Alive para evitar que se cierre el WebSocket por inactividad ---
+    setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ 
+                type: 'ping',
+                client_id: clientId 
+            }));
+        }
+    }, 25000); // Se ejecuta cada 25 segundos
     
     // --- NUEVO: Generar ID único para este visor ---
     const clientId = Math.random().toString(36).substring(2, 15);
